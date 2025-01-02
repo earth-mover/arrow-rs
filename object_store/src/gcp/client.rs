@@ -41,7 +41,7 @@ use hyper::header::{
     CONTENT_TYPE,
 };
 use percent_encoding::{percent_encode, utf8_percent_encode, NON_ALPHANUMERIC};
-use reqwest::header::HeaderName;
+use reqwest::header::{HeaderName, IF_MATCH};
 use reqwest::{Client, Method, RequestBuilder, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use snafu::{OptionExt, ResultExt, Snafu};
@@ -389,8 +389,16 @@ impl GoogleCloudStorageClient {
             PutMode::Overwrite => builder.idempotent(true),
             PutMode::Create => builder.header(&VERSION_MATCH, "0"),
             PutMode::Update(v) => {
-                let etag = v.version.as_ref().context(MissingVersionSnafu)?;
-                builder.header(&VERSION_MATCH, etag)
+                let header = if let Some(version) = v.version.as_ref() {
+                    Some((&VERSION_MATCH, version))
+                } else if let Some(etag) = v.e_tag.as_ref() {
+                    Some((&IF_MATCH, etag))
+                } else {
+                    None
+                }
+                .context(MissingVersionSnafu)?;
+
+                builder.header(header.0, header.1)
             }
         };
 
