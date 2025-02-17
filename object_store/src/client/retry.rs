@@ -274,6 +274,8 @@ impl RetryableRequest {
                 *request.body_mut() = Some(payload.body());
             }
 
+            println!("request: {:?}", request);
+
             match self.client.execute(request).await {
                 Ok(r) => match r.error_for_status_ref() {
                     Ok(_) if r.status().is_success() => {

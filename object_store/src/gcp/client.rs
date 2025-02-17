@@ -244,6 +244,7 @@ impl<'a> Request<'a> {
 
     async fn do_put(self) -> Result<PutResult> {
         let response = self.send().await?;
+        println!("Response: {:?}", response);
         Ok(get_put_result(response.headers(), VERSION_HEADER).context(MetadataSnafu)?)
     }
 }
